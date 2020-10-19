@@ -14,7 +14,12 @@ export type CloudToken = {
   expired_time: number;
 };
 
-export type Token = MPToken & CloudToken;
+export type Crendential = {
+  appid: string;
+  secret: string;
+};
+
+export type Token = MPToken & CloudToken & Crendential;
 
 export const auth = {
   getToken() {

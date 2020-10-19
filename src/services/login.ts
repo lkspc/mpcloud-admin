@@ -1,6 +1,5 @@
 import request, { CORS_URL } from '@/utils/request';
 import { MPToken, CloudToken, Token } from '@/utils/auth';
-import * as cloud from '@/utils/cloud';
 
 export interface LoginParamsType {
   appid: string;
@@ -84,7 +83,7 @@ export async function login(appid: string, secret: string): Promise<Token> {
   return {
     ...mptoken,
     ...cloudtoken,
+    appid,
+    secret,
   };
 }
-
-window.cloud = cloud;
