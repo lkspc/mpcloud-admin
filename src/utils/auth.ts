@@ -2,10 +2,19 @@ import { storage } from './storage';
 
 const SYMBOL_TOKEN = 'token';
 
-export type Token = {
+export type MPToken = {
   access_token: string;
   expires: number;
 };
+
+export type CloudToken = {
+  secret_id: string;
+  secret_key: string;
+  token: string;
+  expired_time: number;
+};
+
+export type Token = MPToken & CloudToken;
 
 export const auth = {
   getToken() {
