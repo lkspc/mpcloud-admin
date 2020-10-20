@@ -1,12 +1,7 @@
 import React from 'react';
-import { cloud } from '@/utils/cloud';
 import styles from './index.less';
 
 export default () => {
-  (async () => {
-    console.log(await cloud.request('DescribeEnvs', {}));
-    console.log(await cloud.request('ModifyEnv', {}));
-  })();
   return (
     <div className={styles.container}>
       <div className={styles.content}>

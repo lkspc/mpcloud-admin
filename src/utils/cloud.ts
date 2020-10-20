@@ -4,29 +4,65 @@ import send, { CORS_URL } from './request';
 
 type Words = string | CryptoJS.lib.WordArray;
 
-type ActionParams = {
-  DescribeEnvs: {};
-  ModifyEnv: {
-    EnvId: string;
-    Alias?: string;
+type Actions = {
+  DescribeEnvs: (params: {
+    EnvId?: string;
+  }) => {
+    RequestId: string;
+    EnvList: {
+      EnvId: string;
+      Source: 'miniapp' | 'qcloud';
+      Alias: string;
+      Status: 'NORMAL' | 'UNAVAILABLE';
+      CreateTime: string;
+      UpdateTime: string;
+      Databases: {
+        InstanceId: string;
+        Region: string;
+        Status: 'INITIALIZING' | 'RUNNING' | 'UNUSABLE' | 'OVERDUE';
+      }[];
+      Storages: {
+        Region: string;
+        Bucket: string;
+        CdnDomain: string;
+        AppId: string;
+      }[];
+      Functions: {
+        Namespace: string;
+        Region: string;
+      }[];
+      PackageId?: string;
+      PackageName?: string;
+      IsAutoDegrade?: boolean;
+      EnvChannel?: string;
+      PayMode?: 'prepayment' | 'postpaid';
+      IsDefault?: boolean;
+      Region?: string;
+    }[];
   };
 };
 
-type Action = keyof ActionParams;
+export type Action = keyof Actions;
 
-type Response<T extends Object> = {
-  Response: {
-    RequestId: string;
-    Error?: {
-      Code: string;
-      Message: string;
-    };
-  } & T;
+export type ActionFn<A extends Action> = Actions[A];
+
+export type ActionParams<A extends Action> = Parameters<ActionFn<A>>[0];
+
+export type ActionResult<A extends Action> = ReturnType<ActionFn<A>>;
+
+export type Response<A extends Action> = {
+  Response:
+    | {
+        RequestId: string;
+        Error: {
+          Code: string;
+          Message: string;
+        };
+      }
+    | ActionResult<A>;
 };
 
-const versions: { [a in Action]?: string } = {
-  DescribeEnvs: '2018-06-08',
-};
+const versions: { [a in Action]?: string } = {};
 
 function sha256(message: Words, secret: Words, encode = false) {
   const words = CryptoJS.HmacSHA256(message, secret);
@@ -50,10 +86,10 @@ export const cloud = {
   service: 'tcb',
   algorithm: 'TC3-HMAC-SHA256',
 
-  getHeaders(action: Action, payload: string) {
-    const cloudToken = auth.getToken();
+  async getHeaders(action: Action, payload: string) {
+    const cloudToken = await auth.getToken();
     if (!cloudToken) {
-      throw new Error('');
+      throw new Error('登录凭证已失效');
     }
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -115,17 +151,17 @@ export const cloud = {
       'X-TC-Language': 'zh-CN',
     };
   },
-  async request<T extends Object, A extends Action>(action: A, data: ActionParams[A]) {
-    const payload = JSON.stringify(data);
-    const headers = this.getHeaders(action, payload);
+  async request<A extends Action>(action: A, data: ActionParams<A>) {
+    const payload = JSON.stringify(data ?? {});
+    const headers = await this.getHeaders(action, payload);
     const url = `${CORS_URL}/https://${this.host}`;
-    const { Response } = await send<Response<T>>(url, {
+    const { Response } = await send<Response<A>>(url, {
       headers,
       method: 'POST',
       body: payload,
     });
 
-    if (Response.Error) {
+    if ('Error' in Response) {
       throw new Error(Response.Error.Message);
     }
 

@@ -1,7 +1,6 @@
 import { Effect, Reducer } from 'umi';
-
 import { query as queryUsers } from '@/services/user';
-import auth from '@/utils/auth';
+import auth, { Token } from '@/utils/auth';
 
 export interface CurrentUser {
   avatar?: string;
@@ -49,8 +48,9 @@ const UserModel: UserModelType = {
         payload: response,
       });
     },
-    *fetchCurrent(_, { put }) {
-      if (auth.isValid()) {
+    *fetchCurrent(_, { put, call }) {
+      const token: Token | null = yield call(() => auth.getToken());
+      if (token) {
         yield put({
           type: 'saveCurrentUser',
           payload: {

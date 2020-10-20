@@ -1,6 +1,5 @@
 import { stringify } from 'querystring';
 import { history, Reducer, Effect } from 'umi';
-import { login } from '@/services/login';
 import { setAuthority } from '@/utils/authority';
 import { getPageQuery } from '@/utils/utils';
 import auth, { Token } from '@/utils/auth';
@@ -32,7 +31,7 @@ const Model: LoginModelType = {
   effects: {
     *login({ payload }, { call, put }) {
       try {
-        const data: Token = yield call(login, payload.appid, payload.secret);
+        const data: Token = yield call(() => auth.refreshToken(payload.appid, payload.secret));
         auth.setToken(data, payload.remember);
 
         yield put({

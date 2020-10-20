@@ -56,6 +56,20 @@ export default defineConfig({
               component: './Welcome',
             },
             {
+              path: '/databadatase',
+              name: 'database',
+              icon: 'database',
+              component: './Database',
+              authority: ['admin'],
+            },
+            {
+              path: '/storage',
+              name: 'storage',
+              icon: 'file',
+              component: './Storage',
+              authority: ['admin'],
+            },
+            {
               path: '/admin',
               name: 'admin',
               icon: 'crown',

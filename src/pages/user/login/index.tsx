@@ -33,7 +33,7 @@ const LoginMessage: React.FC<{
 const Login: React.FC<LoginProps> = (props) => {
   const { userLogin = {}, submitting } = props;
   const { error } = userLogin;
-  const [autoLogin, setAutoLogin] = useState(true);
+  const [autoLogin, setAutoLogin] = useState(false);
 
   const handleSubmit = (values: LoginParamsType) => {
     const { dispatch } = props;

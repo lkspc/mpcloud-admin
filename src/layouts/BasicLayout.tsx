@@ -13,6 +13,7 @@ import { Link, useIntl, connect, Dispatch, history } from 'umi';
 import { Result, Button } from 'antd';
 import Authorized from '@/utils/Authorized';
 import RightContent from '@/components/GlobalHeader/RightContent';
+import EnvDropdown from '@/components/GlobalHeader/EnvDropdown';
 import { ConnectState } from '@/models/connect';
 import { getMatchMenu } from '@umijs/route-utils';
 import Footer from '@/components/Layout/Footer';
@@ -123,6 +124,7 @@ const BasicLayout: React.FC<BasicLayoutProps> = (props) => {
         menuDataRef.current = menuData || [];
         return menuData || [];
       }}
+      headerContentRender={() => <EnvDropdown />}
       {...props}
       {...settings}
     >
