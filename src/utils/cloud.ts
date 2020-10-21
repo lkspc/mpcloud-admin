@@ -4,6 +4,8 @@ import send, { CORS_URL } from './request';
 
 type Words = string | CryptoJS.lib.WordArray;
 
+type ACL = 'READONLY' | 'PRIVATE' | 'ADMINWRITE' | 'ADMINONLY';
+
 type Actions = {
   DescribeEnvs: (params: {
     EnvId?: string;
@@ -40,6 +42,68 @@ type Actions = {
       Region?: string;
     }[];
   };
+  DescribeQuotaData: (params: {
+    EnvId: string;
+    MetricName: string;
+    ResourceID?: string;
+  }) => {
+    RequestId: string;
+    MetricName: string;
+    value: number;
+  };
+  DescribeDatabaseACL: (params: {
+    EnvId: string;
+    CollectionName: string;
+  }) => {
+    RequestId: string;
+    AclTag: ACL;
+  };
+  ModifyDatabaseACL: (params: {
+    EnvId: string;
+    CollectionName: string;
+    AclTag: ACL;
+  }) => {
+    RequestId: string;
+  };
+  DescribeDownloadFile: (params: {
+    CodeUri: string;
+  }) => {
+    RequestId: string;
+    FilePath?: string;
+    CustomKey?: string;
+    DownloadUrl?: string;
+  };
+  DescribeEndUsers: (params: {
+    EnvId: string;
+    Offset?: number;
+    Limit?: number;
+  }) => {
+    RequestId: string;
+    Total: number;
+    Users: {
+      UserName: string;
+      UUId: string;
+      WXOpenId: string;
+      Phone: string;
+      Email: string;
+      NickName: string;
+      Gender: string;
+      AvatarUrl: string;
+      UpdateTime: string;
+      CreateTime: string;
+      IsAnonymous: string;
+      IsDisabled: string;
+      HasPassword: string;
+    }[];
+  };
+  DestroyEnv: (params: {
+    EnvId: string;
+    IsForce?: boolean;
+    BypassCheck?: boolean;
+  }) => {
+    RequestId: string;
+  };
+  Fake: (params: {}) => {};
 };
 
 export type Action = keyof Actions;
@@ -89,7 +153,7 @@ export const cloud = {
   async getHeaders(action: Action, payload: string) {
     const cloudToken = await auth.getToken();
     if (!cloudToken) {
-      throw new Error('登录凭证已失效');
+      return auth.throwInvalid();
     }
 
     // eslint-disable-next-line @typescript-eslint/naming-convention

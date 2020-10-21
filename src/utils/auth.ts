@@ -94,6 +94,9 @@ export const auth = {
     storage.removeItem(SYMBOL_TOKEN, 'local');
     storage.removeItem(SYMBOL_TOKEN, 'session');
   },
+  throwInvalid() {
+    throw new Error('登录凭证已失效');
+  },
   async getToken() {
     const remember = storage.getItem<boolean>(SYMBOL_REMEMBER, 'local');
     let token = storage.getItem<Token>(SYMBOL_TOKEN, remember ? 'local' : 'session');
