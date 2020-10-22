@@ -30,7 +30,8 @@
     "test": "umi test",
     "test:all": "node ./tests/run-tests.js",
     "test:component": "umi test ./src/components",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "cors":"node server.js"
   },
   "lint-staged": {
     "**/*.less": "stylelint --syntax less",
@@ -54,6 +55,7 @@
     "@umijs/route-utils": "^1.0.33",
     "antd": "^4.7.0",
     "classnames": "^2.2.6",
+    "cos-js-sdk-v5": "^1.0.1",
     "crypto-js": "^4.0.0",
     "lodash": "^4.17.11",
     "moment": "^2.25.3",
@@ -85,6 +87,7 @@
     "@umijs/yorkie": "^2.0.3",
     "carlo": "^0.9.46",
     "chalk": "^4.0.0",
+    "cors-anywhere": "^0.4.3",
     "cross-env": "^7.0.0",
     "cross-port-killer": "^1.1.1",
     "detect-installer": "^1.0.1",

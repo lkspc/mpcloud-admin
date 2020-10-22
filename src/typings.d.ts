@@ -40,3 +40,29 @@ declare const REACT_APP_ENV: 'test' | 'dev' | 'pre' | false;
 declare const SIMPLE_HEADER: 'true' | undefined;
 
 declare const HIDE_LOCALE: 'true' | undefined;
+
+declare module 'cos-js-sdk-v5' {
+  export default class COS {
+    constructor(opts: {
+      getAuthorization: (
+        options: Object,
+        callback: (params: {
+          TmpSecretId: string;
+          TmpSecretKey: string;
+          XCosSecurityToken: string;
+          StartTime: number;
+          ExpiredTime: number;
+        }) => void,
+      ) => any;
+    });
+
+    getBucket(
+      params: {
+        Bucket: string;
+        Region: string;
+        Prefix: string;
+      },
+      callback: (err: Error, data: Object) => void,
+    ): void;
+  }
+}

@@ -22,3 +22,19 @@ export const isAntDesignProOrDev = (): boolean => {
 };
 
 export const getPageQuery = () => parse(window.location.href.split('?')[1]);
+
+export function ajaxPatch(proxy: string) {
+  const { open } = XMLHttpRequest.prototype;
+
+  Object.assign(XMLHttpRequest.prototype, {
+    open(...args: Parameters<typeof open>) {
+      const params: typeof args = [...args];
+      const url = params[1];
+      if (!url.startsWith(proxy) && url.includes('cos')) {
+        params[1] = `${proxy}/${url}`;
+      }
+
+      open.call(this, ...params);
+    },
+  });
+}

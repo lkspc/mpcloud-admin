@@ -65,7 +65,7 @@ export default defineConfig({
             {
               path: '/storage',
               name: 'storage',
-              icon: 'file',
+              icon: 'cloud-upload',
               component: './Storage',
               authority: ['admin'],
             },

@@ -49,6 +49,6 @@ export default {
   'menu.editor.flow': '流程编辑器',
   'menu.editor.mind': '脑图编辑器',
   'menu.editor.koni': '拓扑编辑器',
-  'menu.database': '数据库',
+  'menu.database': '数据管理',
   'menu.storage': '文件存储',
 };

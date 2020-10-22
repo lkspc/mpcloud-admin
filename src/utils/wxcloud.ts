@@ -1,3 +1,4 @@
+import COS from 'cos-js-sdk-v5';
 import request, { CORS_URL } from './request';
 import { auth } from './auth';
 
@@ -11,39 +12,71 @@ export enum ConflictMode {
   UPSERT = 2,
 }
 
-async function sendRequest<T = void>(url: string, data: Object) {
-  const token = await auth.getToken();
-  if (!token) {
-    return auth.throwInvalid();
-  }
+export const cos = new COS({
+  getAuthorization: async (_, callback) => {
+    const token = await auth.getToken();
+    if (!token) {
+      auth.throwInvalid();
+    } else {
+      callback({
+        TmpSecretId: token.secret_id,
+        TmpSecretKey: token.secret_key,
+        XCosSecurityToken: token.token,
+        StartTime: Math.round(Date.now() / 1000),
+        ExpiredTime: token.expired_time,
+      });
+    }
+  },
+});
 
-  const { errcode, errmsg, ...rest } = await request<{
-    errcode: number;
-    errmsg: string;
-  }>(`${CORS_URL}/${url}`, {
-    method: 'POST',
-    params: {
-      access_token: token.access_token,
-    },
-    data,
-  });
+function createCloudAction<P, T = void>(endpoint: string) {
+  return async (data: P) => {
+    const token = await auth.getToken();
+    if (!token) {
+      return auth.throwInvalid();
+    }
 
-  if (errcode !== 0) {
-    throw new Error(errmsg);
-  }
+    const url = `https://api.weixin.qq.com/tcb/${endpoint}`;
+    const { errcode, errmsg, ...rest } = await request<{
+      errcode: number;
+      errmsg: string;
+    }>(`${CORS_URL}/${url}`, {
+      method: 'POST',
+      params: {
+        access_token: token.access_token,
+      },
+      data,
+    });
 
-  return rest as T;
+    if (errcode !== 0) {
+      throw new Error(errmsg);
+    }
+
+    return rest as T;
+  };
 }
 
-function createRequestAction<P, T = void>(api: string) {
-  return (params: P) => {
-    const url = `https://api.weixin.qq.com/tcb/${api}`;
-    return sendRequest<T>(url, params);
+function createCOSAction<P, T = void>(api: string) {
+  return async (params: P) => {
+    return new Promise<T>((resolve, reject) => {
+      cos[api](
+        params,
+        (
+          err: {
+            statusCode: number;
+            headers: Object;
+          } | null,
+          data: T,
+        ) => {
+          return err ? reject(err) : resolve(data);
+        },
+      );
+    });
   };
 }
 
 export const database = {
-  import: createRequestAction<
+  import: createCloudAction<
     {
       env: string;
       collection_name: string;
@@ -54,7 +87,7 @@ export const database = {
     },
     { job_id: number }
   >('databasemigrateimport'),
-  export: createRequestAction<
+  export: createCloudAction<
     {
       env: string;
       file_path: string;
@@ -63,7 +96,7 @@ export const database = {
     },
     { job_id: number }
   >('databasemigrateexport'),
-  migration: createRequestAction<
+  migration: createCloudAction<
     {
       env: string;
       job_id: number;
@@ -79,15 +112,15 @@ export const database = {
 };
 
 export const collection = {
-  create: createRequestAction<{
+  create: createCloudAction<{
     env: string;
     collection_name: string;
   }>('databasecollectionadd'),
-  delete: createRequestAction<{
+  delete: createCloudAction<{
     env: string;
     collection_name: string;
   }>('databasecollectiondelete'),
-  list: createRequestAction<
+  list: createCloudAction<
     {
       env: string;
       limit?: number;
@@ -111,14 +144,14 @@ export const collection = {
 };
 
 export const document = {
-  create: createRequestAction<
+  create: createCloudAction<
     {
       env: string;
       query: string;
     },
     { id_list: string[] }
   >('databaseadd'),
-  update: createRequestAction<
+  update: createCloudAction<
     {
       env: string;
       query: string;
@@ -129,7 +162,7 @@ export const document = {
       id: string;
     }
   >('databaseupdate'),
-  list: createRequestAction<
+  list: createCloudAction<
     {
       env: string;
       query: string;
@@ -143,7 +176,7 @@ export const document = {
       data: string[];
     }
   >('databasequery'),
-  count: createRequestAction<
+  count: createCloudAction<
     {
       env: string;
       query: string;
@@ -153,7 +186,7 @@ export const document = {
 };
 
 export const storage = {
-  upload: createRequestAction<
+  getUploadUrl: createCloudAction<
     {
       env: string;
       path: string;
@@ -166,7 +199,7 @@ export const storage = {
       cos_file_id: string;
     }
   >('uploadfile'),
-  download: createRequestAction<
+  getDownloadUrl: createCloudAction<
     {
       env: string;
       file_list: { fileid: string; max_age: number }[];
@@ -180,6 +213,69 @@ export const storage = {
       }[];
     }
   >('batchdownloadfile'),
+  async upload({ env, path, file }: { env: string; path: string; file: Blob }) {
+    const { url, token, authorization, cos_file_id } = await this.getUploadUrl({ env, path });
+
+    const form = new FormData();
+    form.append('key', path);
+    form.append('Signature', authorization);
+    form.append('x-cos-security-token', token);
+    form.append('x-cos-meta-fileid', cos_file_id);
+    form.append('file', file);
+
+    await request<void>(`${CORS_URL}/${url}`, {
+      method: 'POST',
+      data: form,
+    });
+  },
+  delete: createCloudAction<
+    {
+      env: string;
+      file_list: string[];
+    },
+    {
+      delete_list: {
+        fileid: string;
+        status: number;
+        errmsg: string;
+      }[];
+    }
+  >('batchdeletefile'),
+  list: createCOSAction<
+    {
+      Bucket: string;
+      Region: string;
+      Prefix?: string;
+      Delimiter?: string;
+      Marker?: string;
+      MaxKeys?: string;
+      EncodingType?: 'url';
+    },
+    {
+      Name: string;
+      Prefix: string;
+      Marker: string;
+      MaxKeys: string;
+      Delimiter: string;
+      IsTruncated: 'true' | 'false';
+      NextMarker: string;
+      CommonPrefixes: {
+        Prefix: string;
+      }[];
+      EncodingType: string;
+      Contents: {
+        Key: string;
+        ETag: string;
+        Size: string;
+        LastModified: string;
+        Owner: {
+          ID: string;
+          DisplayName: string;
+        };
+        StorageClass: string;
+      }[];
+    }
+  >('getBucket'),
 };
 
 export default {
@@ -187,4 +283,5 @@ export default {
   collection,
   document,
   storage,
+  cos,
 };
