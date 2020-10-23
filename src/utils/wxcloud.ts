@@ -12,6 +12,15 @@ export enum ConflictMode {
   UPSERT = 2,
 }
 
+type Fn = (...args: any[]) => any;
+
+type PromiseValue<T extends Fn> = ReturnType<T> extends Promise<infer R> ? R : never;
+
+export type Response<
+  T extends (...args: any[]) => any,
+  P extends keyof PromiseValue<T> = any
+> = P extends keyof PromiseValue<T> ? Pick<PromiseValue<T>, P> : PromiseValue<T>;
+
 export const cos = new COS({
   getAuthorization: async (_, callback) => {
     const token = await auth.getToken();
@@ -64,7 +73,7 @@ function createCOSAction<P, T = void>(api: string) {
         (
           err: {
             statusCode: number;
-            headers: Object;
+            headers: Headers;
           } | null,
           data: T,
         ) => {
@@ -276,6 +285,27 @@ export const storage = {
       }[];
     }
   >('getBucket'),
+  put: createCOSAction<
+    {
+      Bucket: string;
+      Region: string;
+      Key: string;
+      Body: Blob | string;
+      onTaskReady?: (taskId: string) => void;
+      onProgress?: (progress: { loaded: number; speed: number; percent: number }) => void;
+    },
+    {
+      statusCode: number;
+      headers: {
+        ETag: string;
+        Location: string;
+        VersionId: string;
+      };
+    }
+  >('putObject'),
+  cancel: (taskId: string) => {
+    cos.cancelTask(taskId);
+  },
 };
 
 export default {

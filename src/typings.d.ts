@@ -56,13 +56,8 @@ declare module 'cos-js-sdk-v5' {
       ) => any;
     });
 
-    getBucket(
-      params: {
-        Bucket: string;
-        Region: string;
-        Prefix: string;
-      },
-      callback: (err: Error, data: Object) => void,
-    ): void;
+    cancelTask(taskId: string): void;
+    pauseTask(taskId: string): void;
+    restartTask(taskId: string): void;
   }
 }
