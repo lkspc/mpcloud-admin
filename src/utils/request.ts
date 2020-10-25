@@ -5,7 +5,8 @@
 import { extend } from 'umi-request';
 import { notification } from 'antd';
 
-export const CORS_URL = 'https://cors-anywhere.herokuapp.com';
+export const CORS_URL =
+  REACT_APP_ENV === 'local' ? 'http://localhost:8080' : 'https://cors-anywhere.herokuapp.com';
 
 const codeMessage = {
   200: '服务器成功返回请求的数据。',

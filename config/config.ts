@@ -109,6 +109,7 @@ export default defineConfig({
   theme: {
     // ...darkTheme,
     'primary-color': defaultSettings.primaryColor,
+    'layout-body-background': '#fafafb',
   },
   // @ts-ignore
   title: false,

@@ -21,6 +21,7 @@
     "precommit": "lint-staged",
     "prettier": "prettier -c --write \"src/**/*\"",
     "start": "umi dev",
+    "start:local": "cross-env REACT_APP_ENV=local umi dev",
     "start:dev": "cross-env REACT_APP_ENV=dev MOCK=none umi dev",
     "start:no-mock": "cross-env MOCK=none umi dev",
     "start:no-ui": "cross-env UMI_UI=none umi dev",
@@ -31,7 +32,7 @@
     "test:all": "node ./tests/run-tests.js",
     "test:component": "umi test ./src/components",
     "tsc": "tsc --noEmit",
-    "cors":"node server.js"
+    "cors": "node server.js"
   },
   "lint-staged": {
     "**/*.less": "stylelint --syntax less",
@@ -54,6 +55,7 @@
     "@types/crypto-js": "^4.0.1",
     "@umijs/route-utils": "^1.0.33",
     "antd": "^4.7.0",
+    "byte-size": "^7.0.0",
     "classnames": "^2.2.6",
     "cos-js-sdk-v5": "^1.0.1",
     "crypto-js": "^4.0.0",

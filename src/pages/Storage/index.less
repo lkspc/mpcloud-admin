@@ -1,0 +1,22 @@
+.storage {
+  position: relative;
+
+  :global(.ant-spin-blur) {
+    opacity: 0.8;
+
+    &::after {
+      opacity: 0.2;
+    }
+  }
+}
+
+.empty {
+  position: absolute;
+  top: 200px;
+  width: 100%;
+  text-align: center;
+}
+
+.list {
+  margin-top: 20px;
+}

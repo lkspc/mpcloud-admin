@@ -12,14 +12,16 @@ export enum ConflictMode {
   UPSERT = 2,
 }
 
-type Fn = (...args: any[]) => any;
-
-type PromiseValue<T extends Fn> = ReturnType<T> extends Promise<infer R> ? R : never;
-
-export type Response<
-  T extends (...args: any[]) => any,
-  P extends keyof PromiseValue<T> = any
-> = P extends keyof PromiseValue<T> ? Pick<PromiseValue<T>, P> : PromiseValue<T>;
+export type File = {
+  Key: string;
+  ETag: string;
+  Size: string;
+  LastModified: string;
+  Owner: {
+    ID: string;
+    DisplayName: string;
+  };
+};
 
 export const cos = new COS({
   getAuthorization: async (_, callback) => {
@@ -272,17 +274,7 @@ export const storage = {
         Prefix: string;
       }[];
       EncodingType: string;
-      Contents: {
-        Key: string;
-        ETag: string;
-        Size: string;
-        LastModified: string;
-        Owner: {
-          ID: string;
-          DisplayName: string;
-        };
-        StorageClass: string;
-      }[];
+      Contents: File[];
     }
   >('getBucket'),
   put: createCOSAction<
@@ -303,6 +295,16 @@ export const storage = {
       };
     }
   >('putObject'),
+  getUrl: createCOSAction<
+    {
+      Bucket: string;
+      Region: string;
+      Key: string;
+      Sign?: boolean;
+      Expires?: number;
+    },
+    { Url: string }
+  >('getObjectUrl'),
   cancel: (taskId: string) => {
     cos.cancelTask(taskId);
   },
