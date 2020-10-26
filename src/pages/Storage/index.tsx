@@ -1,26 +1,11 @@
-import React, { ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Space, Button, List, Typography } from 'antd';
 import { useSelector } from 'umi';
 import Header from '@/components/Section/Header';
-import wxcloud, { File as IFile } from '@/utils/wxcloud';
 import { ConnectState } from '@/models/connect';
-import _ from 'lodash';
+import { File, FileStats, getFileStats } from '@/services/api';
 import { Media, Skeleton } from '@/components/Media';
 import styles from './index.less';
-
-interface File extends IFile {
-  Parent: string;
-  Name: string;
-  Ext: string;
-  IsDirectory: boolean;
-  Url: string;
-}
-
-interface FileStats {
-  files: number;
-  directories: number;
-  items: { [key: string]: File[] };
-}
 
 function selectEnv({ cloud }: ConnectState) {
   const { EnvList, currentEnvId } = cloud;
@@ -32,58 +17,6 @@ function selectEnv({ cloud }: ConnectState) {
         cdn: currentEnv.Storages?.[0].CdnDomain,
       }
     : undefined;
-}
-
-function useFileStats(files: IFile[], cdn?: string, path: string = '') {
-  const prevProps = useRef<{ files: IFile[]; cdn?: string }>({ files: [], cdn: undefined });
-  const fileStats = useMemo(() => {
-    const prevFiles = prevProps.current.files;
-    const prevCdn = prevProps.current.cdn;
-    prevProps.current = { files, cdn };
-
-    // avoid fetching not found images when env changes
-    const nextCdn = prevFiles === files && prevCdn !== cdn ? prevCdn : cdn;
-
-    const stats: FileStats = {
-      files: 0,
-      directories: 0,
-      items: {},
-    };
-
-    files.forEach((file) => {
-      const delimeter = '.';
-      const separator = '/';
-
-      const IsDirectory = _.last(file.Key) === separator;
-      const Path = IsDirectory ? _.trimEnd(file.Key, separator) : file.Key;
-      const Index = Path.lastIndexOf(separator);
-      const Parent = file.Key.slice(0, Math.max(Index, 0));
-      const Name = _.trimEnd(file.Key.slice(Index + 1), separator);
-      const Ext = Name.split(delimeter)[1] ?? '';
-
-      if (!stats.items[Parent]) {
-        stats.items[Parent] = [];
-      }
-
-      stats.files += Number(!IsDirectory);
-      stats.directories += Number(IsDirectory);
-      stats.items[Parent].push({
-        ...file,
-        Parent,
-        Name,
-        Ext,
-        IsDirectory,
-        Url: `//${nextCdn}/${file.Key}`,
-      });
-    });
-
-    return {
-      ...stats,
-      items: stats.items[path] ?? [],
-    };
-  }, [files, cdn]);
-
-  return fileStats;
 }
 
 const fakeFiles: File[] = Array.from(
@@ -100,48 +33,53 @@ export default () => {
   const env = useSelector(selectEnv);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
-  const [files, setFiles] = useState<IFile[]>([]);
-  const stats = useFileStats(files, env?.cdn);
+  const [stats, setStats] = useState<FileStats>({
+    files: 0,
+    directories: 0,
+    items: [],
+  });
 
-  const isEmpty = files.length === 0;
+  const isEmpty = stats.items.length === 0;
   const message =
     stats.directories > 0
       ? `共 ${stats.directories} 个目录，${stats.files} 个文件`
       : `共 ${stats.files} 个资源`;
 
   const getFiles = async () => {
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const { Contents } = await wxcloud.storage.list({
-        Bucket: env?.storage?.Bucket!,
-        Region: env?.storage?.Region!,
+      const result = await getFileStats({
+        Bucket: env?.storage.Bucket!,
+        Region: env?.storage.Region!,
+        CDN: env?.storage.CdnDomain!,
       });
-      const data = await wxcloud.storage.getUrl({
-        Bucket: env?.storage?.Bucket!,
-        Region: env?.storage?.Region!,
-        Key: Contents[0].Key,
-        Sign: false,
-      });
-      setFiles(Contents);
-      setLoading(false);
+
+      setStats(result);
     } catch (err) {
       console.log(err);
-      setFiles([]);
-      setLoading(false);
+      setStats({
+        files: 0,
+        directories: 0,
+        items: [],
+      });
     }
+
+    setLoading(false);
+    setSelected([]);
   };
 
   useEffect(() => {
-    if (env) {
+    if (env?.envId) {
       getFiles();
     }
-  }, [env]);
+  }, [env?.envId]);
 
   return (
     <section className={styles.storage}>
       <Header
         title="文件存储"
-        count={files.length}
+        count={stats.files}
         message={message}
         rightContent={
           <Space size="middle">
@@ -156,7 +94,7 @@ export default () => {
         key={env?.envId}
         className={styles.list}
         loading={loading}
-        pagination={!isEmpty && { showSizeChanger: true }}
+        pagination={!isEmpty && !loading && { showSizeChanger: true }}
         grid={{ gutter: 32, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 6 }}
         dataSource={loading || isEmpty ? fakeFiles : stats.items}
         renderItem={(item) => (
