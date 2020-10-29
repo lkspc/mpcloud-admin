@@ -4,43 +4,61 @@ import send, { CORS_URL } from './request';
 
 type Words = string | CryptoJS.lib.WordArray;
 
-type ACL = 'READONLY' | 'PRIVATE' | 'ADMINWRITE' | 'ADMINONLY';
+export type ACL = 'READONLY' | 'PRIVATE' | 'ADMINWRITE' | 'ADMINONLY';
+
+export type CloudEnv = {
+  EnvId: string;
+  Source: 'miniapp' | 'qcloud';
+  Alias: string;
+  Status: 'NORMAL' | 'UNAVAILABLE';
+  CreateTime: string;
+  UpdateTime: string;
+  Databases: {
+    InstanceId: string;
+    Region: string;
+    Status: 'INITIALIZING' | 'RUNNING' | 'UNUSABLE' | 'OVERDUE';
+  }[];
+  Storages: {
+    Region: string;
+    Bucket: string;
+    CdnDomain: string;
+    AppId: string;
+  }[];
+  Functions: {
+    Namespace: string;
+    Region: string;
+  }[];
+  PackageId?: string;
+  PackageName?: string;
+  IsAutoDegrade?: boolean;
+  EnvChannel?: string;
+  PayMode?: 'prepayment' | 'postpaid';
+  IsDefault?: boolean;
+  Region?: string;
+};
+
+export type CloudUser = {
+  UserName: string;
+  UUId: string;
+  WXOpenId: string;
+  Phone: string;
+  Email: string;
+  NickName: string;
+  Gender: string;
+  AvatarUrl: string;
+  UpdateTime: string;
+  CreateTime: string;
+  IsAnonymous: string;
+  IsDisabled: string;
+  HasPassword: string;
+};
 
 type Actions = {
   DescribeEnvs: (params: {
     EnvId?: string;
   }) => {
     RequestId: string;
-    EnvList: {
-      EnvId: string;
-      Source: 'miniapp' | 'qcloud';
-      Alias: string;
-      Status: 'NORMAL' | 'UNAVAILABLE';
-      CreateTime: string;
-      UpdateTime: string;
-      Databases: {
-        InstanceId: string;
-        Region: string;
-        Status: 'INITIALIZING' | 'RUNNING' | 'UNUSABLE' | 'OVERDUE';
-      }[];
-      Storages: {
-        Region: string;
-        Bucket: string;
-        CdnDomain: string;
-        AppId: string;
-      }[];
-      Functions: {
-        Namespace: string;
-        Region: string;
-      }[];
-      PackageId?: string;
-      PackageName?: string;
-      IsAutoDegrade?: boolean;
-      EnvChannel?: string;
-      PayMode?: 'prepayment' | 'postpaid';
-      IsDefault?: boolean;
-      Region?: string;
-    }[];
+    EnvList: CloudEnv[];
   };
   DescribeQuotaData: (params: {
     EnvId: string;
@@ -80,21 +98,7 @@ type Actions = {
   }) => {
     RequestId: string;
     Total: number;
-    Users: {
-      UserName: string;
-      UUId: string;
-      WXOpenId: string;
-      Phone: string;
-      Email: string;
-      NickName: string;
-      Gender: string;
-      AvatarUrl: string;
-      UpdateTime: string;
-      CreateTime: string;
-      IsAnonymous: string;
-      IsDisabled: string;
-      HasPassword: string;
-    }[];
+    Users: CloudUser[];
   };
   DestroyEnv: (params: {
     EnvId: string;

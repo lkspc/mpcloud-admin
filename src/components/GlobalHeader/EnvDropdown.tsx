@@ -47,7 +47,15 @@ const EnvModal: FC<
               key={env.EnvId}
               title={
                 <>
-                  <div style={{ marginBottom: 8 }}>
+                  <div
+                    title={`${env.Alias}(${env.EnvId})`}
+                    style={{
+                      marginBottom: 8,
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {env.Alias}({env.EnvId})
                   </div>
                   <div>{env.PackageName}</div>
